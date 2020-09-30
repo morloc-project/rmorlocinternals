@@ -12,10 +12,3 @@
 \description{
 A tuple corresponds to an unnamed R list.
 }
-\examples{
-# parse a JSON list into R
-mlc_deserialize("[1,2,3]", .mlc_tuple(.mlc_integer))
-
-# write an R list to JSON
-mlc_serialize(list(1,2,3), .mlc_tuple(.mlc_integer))
-}

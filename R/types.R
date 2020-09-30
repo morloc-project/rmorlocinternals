@@ -10,12 +10,6 @@
 #' vector.
 #'
 #' @param x The type parameter for a list
-#' @examples
-#' # parse a JSON list into R
-#' mlc_deserialize("[1,2,3]", .mlc_list(.mlc_integer))
-#'
-#' # write an R vector to JSON
-#' mlc_serialize(c(1,2,3), .mlc_list(.mlc_integer))
 .mlc_list <- function(x){
   paste0("{\"list\":[", x, "]}")
 }
@@ -25,12 +19,6 @@
 #' A tuple corresponds to an unnamed R list.
 #'
 #' @param ... elements of the tuple as JSON strings
-#' @examples
-#' # parse a JSON list into R
-#' mlc_deserialize("[1,2,3]", .mlc_tuple(.mlc_integer))
-#'
-#' # write an R list to JSON
-#' mlc_serialize(list(1,2,3), .mlc_tuple(.mlc_integer))
 .mlc_tuple <- function(...){
   paste0("{\"tuple\":[", paste0(c(...), collapse=",") ,"]}")
 }

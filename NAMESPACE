@@ -2,3 +2,7 @@
 
 export(mlc_deserialize)
 export(mlc_serialize)
+importFrom(Rcpp,sourceCpp)
+importFrom(grDevices,dev.off)
+importFrom(grDevices,pdf)
+useDynLib(rmorlocinternals)

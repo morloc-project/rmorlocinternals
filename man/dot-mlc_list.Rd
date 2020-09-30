@@ -15,10 +15,3 @@ the named, heterogenous lists of R. So `mlc_list(mlc_integer)` would be the
 R version of the Haskell type `[Int]`, in this case, simply a numeric
 vector.
 }
-\examples{
-# parse a JSON list into R
-mlc_deserialize("[1,2,3]", .mlc_list(.mlc_integer))
-
-# write an R vector to JSON
-mlc_serialize(c(1,2,3), .mlc_list(.mlc_integer))
-}
