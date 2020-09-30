@@ -5,3 +5,10 @@
 # rmorlocinternals
 
 Serialization boilerplate for `morloc` compatibility
+
+# Dependencies
+
+This library has no unusual dependencies. Just R (v3.5+) and the Rcpp for C++
+compatibility. `rmorlocinternals` makes heavy use of the `json` library written
+by Niels Lohmann (https://github.com/nlohmann/json). This library is included
+internally as a single header file, so no extra dependencies are required.
