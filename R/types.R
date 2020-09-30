@@ -1,0 +1,51 @@
+# This file holds type handling functions that are useful in tests and such.
+# They are mostly for internal use, so are not exported.
+
+
+#' Helper function for building list types
+#'
+#' The "list" here is a homogenous vector, like the Haskell or lisp list, not
+#' the named, heterogenous lists of R. So `mlc_list(mlc_integer)` would be the
+#' R version of the Haskell type `[Int]`, in this case, simply a numeric
+#' vector.
+#'
+#' @param x The type parameter for a list
+#' @examples
+#' # parse a JSON list into R
+#' mlc_deserialize("[1,2,3]", .mlc_list(.mlc_integer))
+#'
+#' # write an R vector to JSON
+#' mlc_serialize(c(1,2,3), .mlc_list(.mlc_integer))
+.mlc_list <- function(x){
+  paste0("{\"list\":[", x, "]}")
+}
+
+#' Helper function for building tuple types
+#'
+#' A tuple corresponds to an unnamed R list.
+#'
+#' @param ... elements of the tuple as JSON strings
+#' @examples
+#' # parse a JSON list into R
+#' mlc_deserialize("[1,2,3]", .mlc_tuple(.mlc_integer))
+#'
+#' # write an R list to JSON
+#' mlc_serialize(list(1,2,3), .mlc_tuple(.mlc_integer))
+.mlc_tuple <- function(...){
+  paste0("{\"tuple\":[", paste0(c(...), collapse=",") ,"]}")
+}
+
+#' An R scalar integer type
+.mlc_integer <- '"integer"'
+
+#' An R scalar numeric type
+.mlc_numeric <- '"numeric"'
+
+#' An R scalar character type
+.mlc_character <- '"character"'
+
+#' An R scalar character type
+.mlc_logical <- '"logical"'
+
+#' An R scalar character type
+.mlc_null <- '"null"'

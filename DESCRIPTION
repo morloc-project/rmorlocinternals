@@ -1,0 +1,21 @@
+Package: rmorlocinternals
+Type: Package
+Title: Base morloc R package
+Version: 0.1.0
+Authors@R: person("Zebulun", "Arendsee", email="zbwrnz@gmail.com", role=c("aut","cre"))
+URL: https://github.com/morloc-project/rmorlocinternals
+BugReports: https://github.com/morloc-project/rmorlocinternals/issues
+Description: The serialization boilerplate needed for morloc compatibility.
+License: GPL-3
+Depends:
+    R (>= 3.5.0)
+Imports:
+    Rcpp (>= 0.12.7)
+SystemRequirements:
+    C++11
+LinkingTo: Rcpp
+RoxygenNote: 7.1.1
+Suggests:
+    testthat
+LazyData: true
+Encoding: UTF-8
