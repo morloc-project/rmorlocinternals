@@ -1,7 +1,7 @@
 #ifndef __PARSE_H__
 #define __PARSE_H__
 
-#include <nlohmann/json.hpp>
+#include "nlohmann_json.hpp"
 using json = nlohmann::json;
 
 #include <string>
