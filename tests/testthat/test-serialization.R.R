@@ -3,7 +3,13 @@ context("serialization.R")
 test_that(
   "can deserialize primitives",
   {
+    # numbers can be cast as integers or numeric
     expect_identical(mlc_deserialize("42", .mlc_integer), 42L)
+    expect_identical(mlc_deserialize("42", .mlc_numeric), 42)
+    # but numbers cannot be cast as characters
+    expect_error(mlc_deserialize("42", .mlc_character))
+    expect_error(mlc_deserialize("42", .mlc_logical))
+
     expect_identical(mlc_deserialize("\"42\"", .mlc_character), "42")
     expect_identical(mlc_deserialize("true", .mlc_logical), T)
     expect_identical(mlc_deserialize("false", .mlc_logical), F)
@@ -15,9 +21,21 @@ test_that(
 test_that(
   "can serialize primitives",
   {
-    expect_identical(mlc_serialize(as.integer(42), .mlc_integer), "42")
+    # numeric
+    expect_identical(mlc_serialize(42L, .mlc_integer), "42")
+    expect_identical(mlc_serialize(42, .mlc_integer), "42")
+    expect_identical(mlc_serialize(42, .mlc_numeric), "42.0")
+    expect_error(mlc_serialize(42, .mlc_logical))
+    expect_error(mlc_serialize(42, .mlc_character))
+    # character
+    expect_identical(mlc_serialize("", .mlc_character), '""')
+    expect_identical(mlc_serialize("yolo", .mlc_character), '"yolo"')
+    expect_error(mlc_serialize("", .mlc_numeric))
+    # logical
     expect_identical(mlc_serialize(T, .mlc_logical), "true")
     expect_identical(mlc_serialize(F, .mlc_logical), "false")
+    expect_error(mlc_serialize(F, .mlc_numeric))
+    # null
     expect_identical(mlc_serialize(NULL, .mlc_null), "null")
   }
 )
@@ -64,8 +82,24 @@ test_that(
       "[\"1\",\"2\",\"3\"]"
     )
     expect_identical(
-      mlc_serialize(list(as.integer(c(1,2)), as.integer(c(3,4))), .mlc_list(.mlc_tuple(.mlc_integer, .mlc_integer))),
+      mlc_serialize(list(list(1,2), list(3,4)), .mlc_list(.mlc_tuple(.mlc_integer, .mlc_integer))),
       "[[1,2],[3,4]]"
     )
   }
 )
+
+test_that(
+  "Can serialize records",
+  expect_equal(
+    mlc_serialize(list(a=34, b=c(1,2,3)), .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
+    '{"a":34,"b":[1,2,3]}'
+  )
+)
+
+# test_that(
+#   "Can deserialize records",
+#   expect_equal(
+#     mlc_deserialize('{"a":34,"b":[1,2,3]}', .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
+#     list(a=34, b=c(1,2,3))
+#   )
+# )

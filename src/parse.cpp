@@ -5,6 +5,7 @@
 #define LOGICAL "\"logical\""_json
 #define STRING "\"character\""_json
 #define NIL "null"_json
+#define NILEXP Rcpp::as<SEXP>(R_NilValue)
 
 using json = nlohmann::json;
 
@@ -52,54 +53,54 @@ Rcpp::String mlc_serialize(SEXP x, std::string schema_str){
 
 json mlc_serialize(SEXP x, json schema){
     json output;
-    bool is_atomic = schema.is_string();
 
     switch(TYPEOF(x)){
         case NILSXP:
             // the uninitialized json is already null
             break;
+        case INTSXP:
+            // deal with integer and real types according to the type schema
         case REALSXP:
-            if (is_atomic) {
-                if (schema == INTEGER){
-                    output = Rcpp::as<int>(x);
-                } else {
-                    output = Rcpp::as<double>(x);
-                }
-            } else {
-                if (schema["list"] == INTEGER){
+            if (schema.size() == 1 && schema.contains("list")){
+                json list_type = schema["list"].at(0);
+                if (list_type == NUMERIC){
+                    output = Rcpp::as<Rcpp::NumericVector>(x);
+                } else if (list_type == INTEGER){
                     output = Rcpp::as<Rcpp::IntegerVector>(x);
                 } else {
-                    output = Rcpp::as<Rcpp::NumericVector>(x);
+                    Rcpp::stop("Found R numeric vector but expected type '%s'", schema.dump());
                 }
-            }
-            break;
-        case INTSXP:
-            if (is_atomic) {
+            } else if (schema == NUMERIC) {
+                output = Rcpp::as<double>(x);
+            } else if (schema == INTEGER) {
                 output = Rcpp::as<int>(x);
             } else {
-                output = Rcpp::as<Rcpp::IntegerVector>(x);
+                Rcpp::stop("Found R numeric but expected type '%s'", schema.dump());
             }
             break;
         case STRSXP:
-            if (is_atomic) {
+            if (schema.size() == 1 && schema.contains("list") && schema["list"].at(0) == STRING){
+                output = Rcpp::as<Rcpp::StringVector>(x);
+            } else if (schema == STRING) {
                 output = Rcpp::as<std::string>(x);
             } else {
-                output = Rcpp::as<Rcpp::StringVector>(x);
+                Rcpp::stop("Found R character but expected type '%s'", schema.dump());
             }
             break;
         case LGLSXP:
-            if (is_atomic) {
+            if (schema.size() == 1 && schema.contains("list") && schema["list"].at(0) == LOGICAL){
+                output = Rcpp::as<Rcpp::LogicalVector>(x);
+            } else if (schema == LOGICAL) {
                 output = Rcpp::as<bool>(x);
             } else {
-                output = Rcpp::as<Rcpp::LogicalVector>(x);
+                Rcpp::stop("Found R logical but expected type '%s'", schema.dump());
             }
             break;
         case VECSXP:
             output = mlc_serialize_list(Rcpp::as<Rcpp::List>(x), schema);
             break;
         default:
-            Rcpp::Rcerr << "Serialization failure, could not serialize type: "
-                        << schema.dump() << std::endl;
+            Rcpp::stop("Could not serialize data of type '%s'", schema.dump());
             break;
     }
 
@@ -121,7 +122,12 @@ json mlc_serialize_list(Rcpp::List x, json schema){
             output.push_back(el);
         }
     } else {
-        Rcpp::Rcerr << "Records not yet supported: '" << schema.dump() << std::endl;
+        output = json::object();
+        // Iterate through the
+        for (json::iterator it = schema.begin(); it != schema.end(); ++it) {
+            json el = mlc_serialize(x[it.key()], it.value());
+            output[it.key()] = el;
+        }
     }
     return(output);
 }

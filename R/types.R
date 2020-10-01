@@ -14,6 +14,10 @@
   paste0("{\"list\":[", x, "]}")
 }
 
+.mlc_array <- function(...){
+  paste0("[", paste0(c(...), collapse=","), "]")
+}
+
 #' Helper function for building tuple types
 #'
 #' A tuple corresponds to an unnamed R list.
@@ -21,6 +25,16 @@
 #' @param ... elements of the tuple as JSON strings
 .mlc_tuple <- function(...){
   paste0("{\"tuple\":[", paste0(c(...), collapse=",") ,"]}")
+}
+
+#' Helper function for building record types
+#'
+#' @param ... key-value pairs with JSON strings for values
+.mlc_record <- function(...){
+  entries <- list(...)
+  make_field <- function(k) paste0('"', k, '"', ":", entries[[k]])
+  entry_strings <- paste0(sapply(names(entries), make_field), collapse=",")
+  paste0("{", entry_strings, "}", collapse="")
 }
 
 #' An R scalar integer type
