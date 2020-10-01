@@ -27,14 +27,21 @@
   paste0("{\"tuple\":[", paste0(c(...), collapse=",") ,"]}")
 }
 
-#' Helper function for building record types
+#' Helper function for building JSON objects
 #'
 #' @param ... key-value pairs with JSON strings for values
-.mlc_record <- function(...){
+.mlc_object <- function(...){
   entries <- list(...)
   make_field <- function(k) paste0('"', k, '"', ":", entries[[k]])
   entry_strings <- paste0(sapply(names(entries), make_field), collapse=",")
   paste0("{", entry_strings, "}", collapse="")
+}
+
+#' Helper function for building record types
+#'
+#' @param ... key-value pairs with JSON strings for values
+.mlc_record <- function(...){
+  paste0('{"record":', .mlc_object(...), '}')
 }
 
 #' An R scalar integer type

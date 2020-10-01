@@ -110,6 +110,11 @@ json mlc_serialize(SEXP x, json schema){
 // serialize(list(1,2), '{"tuple":["integer", "integer"]}')
 json mlc_serialize_list(Rcpp::List x, json schema){
     json output;
+
+    if (! schema.is_object()){
+        Rcpp::stop("Expected R list data for type: ", schema.dump());
+    }
+
     if (schema.size() == 1 && schema.contains("tuple")){
         for(R_xlen_t i = 0; i < x.size(); i++){
             json el = mlc_serialize(x.at(i), schema["tuple"].at(i));
@@ -121,13 +126,15 @@ json mlc_serialize_list(Rcpp::List x, json schema){
             json el = mlc_serialize(*it, list_type);
             output.push_back(el);
         }
+    } else if (schema.size() == 1 && schema.contains("record")) {
+        output = mlc_serialize_list(x, schema["record"]);
     } else if (schema.size() == 1 && schema.contains("dataframe")){
         Rcpp::stop("R dataframe serialization is not yet supported");
     } else if (schema.size() == 1 && schema.contains("matrix")){
         Rcpp::stop("R matrix serialization is not yet supported");
     } else {
         output = json::object();
-        // Iterate through the
+        // Iterate through the key-val pairs in an object
         for (json::iterator it = schema.begin(); it != schema.end(); ++it) {
             json el = mlc_serialize(x[it.key()], it.value());
             output[it.key()] = el;
@@ -157,11 +164,7 @@ SEXP mlc_deserialize(json data, json schema){
         } else {
             Rcpp::stop("Could not deserialize JSON data of R type '%s'", schema.dump());
         }
-    } else if (schema.size() == 1 && schema.contains("list")){
-        if (schema["list"].size() != 1){
-            Rcpp::stop("Expected 1 type parameter for R list, found %d in R type: %s",
-                       schema["list"].size(), schema.dump());
-        }
+    } else if (schema.size() == 1 && (schema.contains("list"))) {
         json list_type = schema["list"].at(0);
         if (list_type == INTEGER){
             std::vector<int> xs = data.get<std::vector<int>>();
@@ -203,6 +206,8 @@ SEXP mlc_deserialize(json data, json schema){
             L.push_back(val);
         }
         result = Rcpp::as<SEXP>(L);
+    } else if (schema.size() == 1 && schema.contains("record")){
+        result = mlc_deserialize(data, schema["record"]); 
     } else if (schema.size() == 1 && schema.contains("dataframe")){
         Rcpp::stop("R dataframe deserialization is not yet supported");
     } else if (schema.size() == 1 && schema.contains("matrix")){

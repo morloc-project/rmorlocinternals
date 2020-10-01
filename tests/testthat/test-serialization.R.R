@@ -90,16 +90,28 @@ test_that(
 
 test_that(
   "Can serialize records",
-  expect_equal(
-    mlc_serialize(list(a=34, b=c(1,2,3)), .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
-    '{"a":34,"b":[1,2,3]}'
-  )
+  {
+    expect_equal(
+      mlc_serialize(list(a=34), .mlc_record(a=.mlc_integer)),
+      '{"a":34}'
+    )
+    expect_equal(
+      mlc_serialize(list(a=34, b=c(1,2,3)), .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
+      '{"a":34,"b":[1,2,3]}'
+    )
+  }
 )
 
 test_that(
   "Can deserialize records",
-  expect_equal(
-    mlc_deserialize('{"a":34,"b":[1,2,3]}', .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
-    list(a=34, b=c(1,2,3))
-  )
+  {
+    expect_equal(
+      mlc_deserialize('{"a":34}', .mlc_record(a=.mlc_integer)),
+      list(a=34)
+    )
+    expect_equal(
+      mlc_deserialize('{"a":34,"b":[1,2,3]}', .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
+      list(a=34, b=c(1,2,3))
+    )
+  }
 )
