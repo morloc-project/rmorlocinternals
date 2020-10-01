@@ -139,13 +139,10 @@ json mlc_serialize_dataframe(Rcpp::DataFrame, json schema){
 }
 
 SEXP mlc_deserialize(json data, json schema){
-    // FIXME: This is grossly inefficient. What we SHOULD do is convert the
-    // schema into a structure of enums (e.g., [INT, DOUBLE, BOOL, LIST, TUPLE,
-    // ...])
-
     SEXP result;
-
-    if (schema.is_string()){
+    if (schema.is_null()){
+        result = NILEXP;
+    } else if (schema.is_string()){
         if (schema == INTEGER){
             Rcpp::IntegerVector x = { data.get<int>() };
             result = Rcpp::as<SEXP>(x);
@@ -159,50 +156,57 @@ SEXP mlc_deserialize(json data, json schema){
             Rcpp::StringVector x = { data.get<std::string>() };
             result = Rcpp::as<SEXP>(x);
         } else {
-            Rcpp::Rcerr << "Unrecognized R value type: '" << schema.dump()
-                        << "' returning NULL" << std::endl;
-            result = Rcpp::as<SEXP>(R_NilValue);
+            Rcpp::stop("Could not deserialize JSON data of R type '%s'", schema.dump());
         }
-    } else if (schema.is_null()){
-        result = Rcpp::as<SEXP>(R_NilValue);
-    } else {
-        if (schema.contains("list")){
-            json list_type = schema["list"].at(0);
-            if (list_type == INTEGER){
-                std::vector<int> xs = data.get<std::vector<int>>();
-                Rcpp::IntegerVector rs = Rcpp::IntegerVector::import(xs.begin(), xs.end());
-                result = Rcpp::as<SEXP>(rs);
-            } else if (list_type == NUMERIC) {
-                std::vector<double> xs = data.get<std::vector<double>>();
-                Rcpp::NumericVector rs = Rcpp::NumericVector::import(xs.begin(), xs.end());
-                result = Rcpp::as<SEXP>(rs);
-            } else if (list_type == LOGICAL) {
-                std::vector<bool> xs = data.get<std::vector<bool>>();
-                Rcpp::LogicalVector rs = Rcpp::LogicalVector::import(xs.begin(), xs.end());
-                result = Rcpp::as<SEXP>(rs);
-            } else if (list_type == STRING) {
-                std::vector<std::string> xs = data.get<std::vector<std::string>>();
-                Rcpp::StringVector rs = Rcpp::StringVector::import(xs.begin(), xs.end());
-                result = Rcpp::as<SEXP>(rs);
-            } else {
-                Rcpp::List L = Rcpp::List::create();
-                for (json::iterator it = data.begin(); it != data.end(); ++it) {
-                    SEXP val = mlc_deserialize(*it, list_type);
-                    L.push_back(val);
-                }
-                result = Rcpp::as<SEXP>(L);
-            }
-        } else if (schema.contains("tuple")){
+    } else if (schema.size() == 1 && schema.contains("list")){
+        if (schema["list"].size() != 1){
+            Rcpp::stop("Expected 1 type parameter for R list, found %d in R type: %s",
+                       schema["list"].size(), schema.dump());
+        }
+        json list_type = schema["list"].at(0);
+        if (list_type == INTEGER){
+            std::vector<int> xs = data.get<std::vector<int>>();
+            Rcpp::IntegerVector rs = Rcpp::IntegerVector::import(xs.begin(), xs.end());
+            result = Rcpp::as<SEXP>(rs);
+        } else if (list_type == NUMERIC) {
+            std::vector<double> xs = data.get<std::vector<double>>();
+            Rcpp::NumericVector rs = Rcpp::NumericVector::import(xs.begin(), xs.end());
+            result = Rcpp::as<SEXP>(rs);
+        } else if (list_type == LOGICAL) {
+            std::vector<bool> xs = data.get<std::vector<bool>>();
+            Rcpp::LogicalVector rs = Rcpp::LogicalVector::import(xs.begin(), xs.end());
+            result = Rcpp::as<SEXP>(rs);
+        } else if (list_type == STRING) {
+            std::vector<std::string> xs = data.get<std::vector<std::string>>();
+            Rcpp::StringVector rs = Rcpp::StringVector::import(xs.begin(), xs.end());
+            result = Rcpp::as<SEXP>(rs);
+        } else {
             Rcpp::List L = Rcpp::List::create();
-            json tuple_types = schema["tuple"];
-            for (size_t i = 0; i < tuple_types.size(); i++){
-                SEXP val = mlc_deserialize(data.at(i), tuple_types.at(i));
+            for (json::iterator it = data.begin(); it != data.end(); ++it) {
+                SEXP val = mlc_deserialize(*it, list_type);
                 L.push_back(val);
             }
             result = Rcpp::as<SEXP>(L);
-        } else {
-            Rcpp::Rcerr << "Unrecognized R object type: " << schema.dump() << std::endl;
         }
+    } else if (schema.size() == 1 && schema.contains("tuple")){
+        Rcpp::List L = Rcpp::List::create();
+        json tuple_types = schema["tuple"];
+        if(tuple_types.size() != data.size()){
+            Rcpp::stop(
+                "Wrong number of elements, expected %d but found %d in tuple of R type: %s",
+                tuple_types.size(),
+                data.size(),
+                schema.dump()
+            );
+        }
+        for (size_t i = 0; i < tuple_types.size(); i++){
+            SEXP val = mlc_deserialize(data.at(i), tuple_types.at(i));
+            L.push_back(val);
+        }
+        result = Rcpp::as<SEXP>(L);
+    } else {
+        Rcpp::Rcerr << "Unrecognized R object type: " << schema.dump() << std::endl;
+        // Rcpp::List L = Rcpp::List::create();
     }
     return(result);
 }

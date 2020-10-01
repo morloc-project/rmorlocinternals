@@ -50,4 +50,4 @@
 .mlc_logical <- '"logical"'
 
 #' An R scalar character type
-.mlc_null <- '"null"'
+.mlc_null <- 'null'
