@@ -110,17 +110,21 @@ json mlc_serialize(SEXP x, json schema){
 // serialize(list(1,2), '{"tuple":["integer", "integer"]}')
 json mlc_serialize_list(Rcpp::List x, json schema){
     json output;
-    if (schema.contains("tuple")){
+    if (schema.size() == 1 && schema.contains("tuple")){
         for(R_xlen_t i = 0; i < x.size(); i++){
             json el = mlc_serialize(x.at(i), schema["tuple"].at(i));
             output.push_back(el);
         }
-    } else if (schema.contains("list")){
+    } else if (schema.size() == 1 && schema.contains("list")){
         json list_type = schema["list"].at(0);
         for(Rcpp::List::iterator it = x.begin(); it != x.end(); ++it) {
             json el = mlc_serialize(*it, list_type);
             output.push_back(el);
         }
+    } else if (schema.size() == 1 && schema.contains("dataframe")){
+        Rcpp::stop("R dataframe serialization is not yet supported");
+    } else if (schema.size() == 1 && schema.contains("matrix")){
+        Rcpp::stop("R matrix serialization is not yet supported");
     } else {
         output = json::object();
         // Iterate through the
@@ -132,11 +136,6 @@ json mlc_serialize_list(Rcpp::List x, json schema){
     return(output);
 }
 
-
-json mlc_serialize_dataframe(Rcpp::DataFrame, json schema){
-    json j("dataFrame");
-    return(j);
-}
 
 SEXP mlc_deserialize(json data, json schema){
     SEXP result;
@@ -204,6 +203,10 @@ SEXP mlc_deserialize(json data, json schema){
             L.push_back(val);
         }
         result = Rcpp::as<SEXP>(L);
+    } else if (schema.size() == 1 && schema.contains("dataframe")){
+        Rcpp::stop("R dataframe deserialization is not yet supported");
+    } else if (schema.size() == 1 && schema.contains("matrix")){
+        Rcpp::stop("R matrix deserialization is not yet supported");
     } else if (schema.is_object()) {
         Rcpp::List L = Rcpp::List::create();
         for (json::iterator it = schema.begin(); it != schema.end(); ++it) {
