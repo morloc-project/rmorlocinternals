@@ -204,9 +204,15 @@ SEXP mlc_deserialize(json data, json schema){
             L.push_back(val);
         }
         result = Rcpp::as<SEXP>(L);
+    } else if (schema.is_object()) {
+        Rcpp::List L = Rcpp::List::create();
+        for (json::iterator it = schema.begin(); it != schema.end(); ++it) {
+            SEXP el = mlc_deserialize(data[it.key()], it.value());
+            L[it.key()] = el;
+        }
+        result = Rcpp::as<SEXP>(L);
     } else {
-        Rcpp::Rcerr << "Unrecognized R object type: " << schema.dump() << std::endl;
-        // Rcpp::List L = Rcpp::List::create();
+        Rcpp::stop("Could not deserialize R data of type: %s", schema.dump());
     }
     return(result);
 }
