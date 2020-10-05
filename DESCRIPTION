@@ -8,9 +8,9 @@ BugReports: https://github.com/morloc-project/rmorlocinternals/issues
 Description: The serialization boilerplate needed for morloc compatibility.
 License: GPL-3
 Depends:
-    R (>= 3.5.0)
+    R (>= 3.2.0)
 Imports:
-    Rcpp (>= 0.12.7)
+    Rcpp
 SystemRequirements:
     C++11
 LinkingTo: Rcpp
