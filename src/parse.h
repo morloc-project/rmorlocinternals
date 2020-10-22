@@ -2,7 +2,6 @@
 #define __PARSE_H__
 
 #include "nlohmann_json.h"
-using json = nlohmann::json;
 
 #include <string>
 #include <Rcpp.h>

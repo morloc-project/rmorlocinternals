@@ -99,6 +99,15 @@ test_that(
       mlc_serialize(list(a=34, b=c(1,2,3)), .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
       '{"a":34,"b":[1,2,3]}'
     )
+    # the schema order determines output order
+    expect_equal(
+      mlc_serialize(list(b=c(1,2,3), a=34), .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
+      '{"a":34,"b":[1,2,3]}'
+    )
+    expect_equal(
+      mlc_serialize(list(a=34, b=c(1,2,3)), .mlc_record(b=.mlc_list(.mlc_integer), a=.mlc_integer)),
+      '{"b":[1,2,3],"a":34}'
+    )
   }
 )
 
@@ -112,6 +121,15 @@ test_that(
     expect_equal(
       mlc_deserialize('{"a":34,"b":[1,2,3]}', .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
       list(a=34, b=c(1,2,3))
+    )
+    # the schema order determines output order
+    expect_equal(
+      mlc_deserialize('{"b":[1,2,3],"a":34}', .mlc_record(a=.mlc_integer, b=.mlc_list(.mlc_integer))),
+      list(a=34, b=c(1,2,3))
+    )
+    expect_equal(
+      mlc_deserialize('{"a":34,"b":[1,2,3]}', .mlc_record(b=.mlc_list(.mlc_integer), a=.mlc_integer)),
+      list(b=c(1,2,3), a=34)
     )
   }
 )

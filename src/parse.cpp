@@ -1,21 +1,21 @@
 #include "parse.h"
 
-#define INTEGER "\"integer\""_json
-#define NUMERIC "\"numeric\""_json
-#define LOGICAL "\"logical\""_json
-#define STRING "\"character\""_json
-#define NIL "null"_json
+#define INTEGER "\"integer\""
+#define NUMERIC "\"numeric\""
+#define LOGICAL "\"logical\""
+#define STRING "\"character\""
+#define NIL "null"
 #define NILEXP Rcpp::as<SEXP>(R_NilValue)
 
-using json = nlohmann::json;
+using ordered_json = nlohmann::ordered_json;
 
-json mlc_serialize(SEXP x, json schema);
-json mlc_serialize_list(Rcpp::List data, json schema);
-json mlc_serialize_dataframe(Rcpp::DataFrame data, json schema);
-SEXP mlc_deserialize(json data, json schema);
+ordered_json mlc_serialize(SEXP x, ordered_json schema);
+ordered_json mlc_serialize_list(Rcpp::List data, ordered_json schema);
+ordered_json mlc_serialize_dataframe(Rcpp::DataFrame data, ordered_json schema);
+SEXP mlc_deserialize(ordered_json data, ordered_json schema);
 
 SEXP mlc_deserialize(std::string data, std::string schema){
-    return(mlc_deserialize(json::parse(data), json::parse(schema)));
+    return(mlc_deserialize(ordered_json::parse(data), ordered_json::parse(schema)));
 }
 
 // SEXP types, from https://cran.r-project.org/doc/manuals/r-release/R-ints.html#SEXPs
@@ -46,13 +46,13 @@ SEXP mlc_deserialize(std::string data, std::string schema){
 
 
 Rcpp::String mlc_serialize(SEXP x, std::string schema_str){
-    json schema = json::parse(schema_str);
-    json output = mlc_serialize(x, schema);
+    ordered_json schema = ordered_json::parse(schema_str);
+    ordered_json output = mlc_serialize(x, schema);
     return (output.dump());
 }
 
-json mlc_serialize(SEXP x, json schema){
-    json output;
+ordered_json mlc_serialize(SEXP x, ordered_json schema){
+    ordered_json output;
 
     switch(TYPEOF(x)){
         case NILSXP:
@@ -62,35 +62,35 @@ json mlc_serialize(SEXP x, json schema){
             // deal with integer and real types according to the type schema
         case REALSXP:
             if (schema.size() == 1 && schema.contains("list")){
-                json list_type = schema["list"].at(0);
-                if (list_type == NUMERIC){
+                ordered_json list_type = schema["list"].at(0);
+                if (list_type.dump() == NUMERIC){
                     output = Rcpp::as<Rcpp::NumericVector>(x);
-                } else if (list_type == INTEGER){
+                } else if (list_type.dump() == INTEGER){
                     output = Rcpp::as<Rcpp::IntegerVector>(x);
                 } else {
                     Rcpp::stop("Found R numeric vector but expected type '%s'", schema.dump());
                 }
-            } else if (schema == NUMERIC) {
+            } else if (schema.dump() == NUMERIC) {
                 output = Rcpp::as<double>(x);
-            } else if (schema == INTEGER) {
+            } else if (schema.dump() == INTEGER) {
                 output = Rcpp::as<int>(x);
             } else {
                 Rcpp::stop("Found R numeric but expected type '%s'", schema.dump());
             }
             break;
         case STRSXP:
-            if (schema.size() == 1 && schema.contains("list") && schema["list"].at(0) == STRING){
+            if (schema.size() == 1 && schema.contains("list") && schema["list"].at(0).dump() == STRING){
                 output = Rcpp::as<Rcpp::StringVector>(x);
-            } else if (schema == STRING) {
+            } else if (schema.dump() == STRING) {
                 output = Rcpp::as<std::string>(x);
             } else {
                 Rcpp::stop("Found R character but expected type '%s'", schema.dump());
             }
             break;
         case LGLSXP:
-            if (schema.size() == 1 && schema.contains("list") && schema["list"].at(0) == LOGICAL){
+            if (schema.size() == 1 && schema.contains("list") && schema["list"].at(0).dump() == LOGICAL){
                 output = Rcpp::as<Rcpp::LogicalVector>(x);
-            } else if (schema == LOGICAL) {
+            } else if (schema.dump() == LOGICAL) {
                 output = Rcpp::as<bool>(x);
             } else {
                 Rcpp::stop("Found R logical but expected type '%s'", schema.dump());
@@ -108,8 +108,8 @@ json mlc_serialize(SEXP x, json schema){
 }
 
 // serialize(list(1,2), '{"tuple":["integer", "integer"]}')
-json mlc_serialize_list(Rcpp::List x, json schema){
-    json output;
+ordered_json mlc_serialize_list(Rcpp::List x, ordered_json schema){
+    ordered_json output;
 
     if (! schema.is_object()){
         Rcpp::stop("Expected R list data for type: ", schema.dump());
@@ -117,13 +117,13 @@ json mlc_serialize_list(Rcpp::List x, json schema){
 
     if (schema.size() == 1 && schema.contains("tuple")){
         for(R_xlen_t i = 0; i < x.size(); i++){
-            json el = mlc_serialize(x.at(i), schema["tuple"].at(i));
+            ordered_json el = mlc_serialize(x.at(i), schema["tuple"].at(i));
             output.push_back(el);
         }
     } else if (schema.size() == 1 && schema.contains("list")){
-        json list_type = schema["list"].at(0);
+        ordered_json list_type = schema["list"].at(0);
         for(Rcpp::List::iterator it = x.begin(); it != x.end(); ++it) {
-            json el = mlc_serialize(*it, list_type);
+            ordered_json el = mlc_serialize(*it, list_type);
             output.push_back(el);
         }
     } else if (schema.size() == 1 && schema.contains("record")) {
@@ -133,10 +133,10 @@ json mlc_serialize_list(Rcpp::List x, json schema){
     } else if (schema.size() == 1 && schema.contains("matrix")){
         Rcpp::stop("R matrix serialization is not yet supported");
     } else {
-        output = json::object();
+        output = ordered_json::object();
         // Iterate through the key-val pairs in an object
-        for (json::iterator it = schema.begin(); it != schema.end(); ++it) {
-            json el = mlc_serialize(x[it.key()], it.value());
+        for (ordered_json::iterator it = schema.begin(); it != schema.end(); ++it) {
+            ordered_json el = mlc_serialize(x[it.key()], it.value());
             output[it.key()] = el;
         }
     }
@@ -144,47 +144,47 @@ json mlc_serialize_list(Rcpp::List x, json schema){
 }
 
 
-SEXP mlc_deserialize(json data, json schema){
+SEXP mlc_deserialize(ordered_json data, ordered_json schema){
     SEXP result;
     if (schema.is_null()){
         result = NILEXP;
     } else if (schema.is_string()){
-        if (schema == INTEGER){
+        if (schema.dump() == INTEGER){
             Rcpp::IntegerVector x = { data.get<int>() };
             result = Rcpp::as<SEXP>(x);
-        } else if (schema == NUMERIC) {
+        } else if (schema.dump() == NUMERIC) {
             Rcpp::NumericVector x = { data.get<double>() };
             result = Rcpp::as<SEXP>(x);
-        } else if (schema == LOGICAL) {
+        } else if (schema.dump() == LOGICAL) {
             Rcpp::LogicalVector x = { data.get<bool>() };
             result = Rcpp::as<SEXP>(x);
-        } else if (schema == STRING) {
+        } else if (schema.dump() == STRING) {
             Rcpp::StringVector x = { data.get<std::string>() };
             result = Rcpp::as<SEXP>(x);
         } else {
             Rcpp::stop("Could not deserialize JSON data of R type '%s'", schema.dump());
         }
     } else if (schema.size() == 1 && (schema.contains("list"))) {
-        json list_type = schema["list"].at(0);
-        if (list_type == INTEGER){
+        ordered_json list_type = schema["list"].at(0);
+        if (list_type.dump() == INTEGER){
             std::vector<int> xs = data.get<std::vector<int>>();
             Rcpp::IntegerVector rs = Rcpp::IntegerVector::import(xs.begin(), xs.end());
             result = Rcpp::as<SEXP>(rs);
-        } else if (list_type == NUMERIC) {
+        } else if (list_type.dump() == NUMERIC) {
             std::vector<double> xs = data.get<std::vector<double>>();
             Rcpp::NumericVector rs = Rcpp::NumericVector::import(xs.begin(), xs.end());
             result = Rcpp::as<SEXP>(rs);
-        } else if (list_type == LOGICAL) {
+        } else if (list_type.dump() == LOGICAL) {
             std::vector<bool> xs = data.get<std::vector<bool>>();
             Rcpp::LogicalVector rs = Rcpp::LogicalVector::import(xs.begin(), xs.end());
             result = Rcpp::as<SEXP>(rs);
-        } else if (list_type == STRING) {
+        } else if (list_type.dump() == STRING) {
             std::vector<std::string> xs = data.get<std::vector<std::string>>();
             Rcpp::StringVector rs = Rcpp::StringVector::import(xs.begin(), xs.end());
             result = Rcpp::as<SEXP>(rs);
         } else {
             Rcpp::List L = Rcpp::List::create();
-            for (json::iterator it = data.begin(); it != data.end(); ++it) {
+            for (ordered_json::iterator it = data.begin(); it != data.end(); ++it) {
                 SEXP val = mlc_deserialize(*it, list_type);
                 L.push_back(val);
             }
@@ -192,7 +192,7 @@ SEXP mlc_deserialize(json data, json schema){
         }
     } else if (schema.size() == 1 && schema.contains("tuple")){
         Rcpp::List L = Rcpp::List::create();
-        json tuple_types = schema["tuple"];
+        ordered_json tuple_types = schema["tuple"];
         if(tuple_types.size() != data.size()){
             Rcpp::stop(
                 "Wrong number of elements, expected %d but found %d in tuple of R type: %s",
@@ -214,9 +214,9 @@ SEXP mlc_deserialize(json data, json schema){
         Rcpp::stop("R matrix deserialization is not yet supported");
     } else if (schema.is_object()) {
         Rcpp::List L = Rcpp::List::create();
-        for (json::iterator it = schema.begin(); it != schema.end(); ++it) {
+        for (ordered_json::iterator it = schema.begin(); it != schema.end(); ++it) {
             SEXP el = mlc_deserialize(data[it.key()], it.value());
-            L[it.key()] = el;
+            L.push_back(el, it.key());
         }
         result = Rcpp::as<SEXP>(L);
     } else {
