@@ -133,14 +133,3 @@ test_that(
     )
   }
 )
-
-test_that(
-  "Can deserialize lists of records"
-    expect_equal(
-      mlc_deserialize(
-        '{"a":34,"b":[1,2,3]}',
-        .mlc_list(.mlc_record(b=.mlc_integer, a=.mlc_integer)),
-        list(b=c(1,2,3), a=34)
-      )
-    )
-)
