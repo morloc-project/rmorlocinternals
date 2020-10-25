@@ -14,8 +14,7 @@ mlc_serialize <- function(x, schema) {
 #'
 #' @param data JSON data
 #' @param schema JSON type string
-#' @export
-mlc_deserialize <- function(data, schema) {
-    .Call('_rmorlocinternals_mlc_deserialize', PACKAGE = 'rmorlocinternals', data, schema)
+mlc_deserialize_ <- function(data, schema) {
+    .Call('_rmorlocinternals_mlc_deserialize_', PACKAGE = 'rmorlocinternals', data, schema)
 }
 

@@ -12,10 +12,10 @@ using ordered_json = nlohmann::ordered_json;
 ordered_json mlc_serialize(SEXP x, ordered_json schema);
 ordered_json mlc_serialize_list(Rcpp::List data, ordered_json schema);
 ordered_json mlc_serialize_dataframe(Rcpp::DataFrame data, ordered_json schema);
-SEXP mlc_deserialize(ordered_json data, ordered_json schema);
+SEXP mlc_deserialize_(ordered_json data, ordered_json schema);
 
-SEXP mlc_deserialize(std::string data, std::string schema){
-    return(mlc_deserialize(ordered_json::parse(data), ordered_json::parse(schema)));
+SEXP mlc_deserialize_(std::string data, std::string schema){
+    return(mlc_deserialize_(ordered_json::parse(data), ordered_json::parse(schema)));
 }
 
 // SEXP types, from https://cran.r-project.org/doc/manuals/r-release/R-ints.html#SEXPs
@@ -128,8 +128,8 @@ ordered_json mlc_serialize_list(Rcpp::List x, ordered_json schema){
         }
     } else if (schema.size() == 1 && schema.contains("record")) {
         output = mlc_serialize_list(x, schema["record"]);
-    } else if (schema.size() == 1 && schema.contains("dataframe")){
-        Rcpp::stop("R dataframe serialization is not yet supported");
+    } else if (schema.size() == 1 && schema.contains("table")) {
+        output = mlc_serialize_list(x, schema["table"]);
     } else if (schema.size() == 1 && schema.contains("matrix")){
         Rcpp::stop("R matrix serialization is not yet supported");
     } else {
@@ -144,7 +144,7 @@ ordered_json mlc_serialize_list(Rcpp::List x, ordered_json schema){
 }
 
 
-SEXP mlc_deserialize(ordered_json data, ordered_json schema){
+SEXP mlc_deserialize_(ordered_json data, ordered_json schema){
     SEXP result;
     if (schema.is_null()){
         result = NILEXP;
@@ -183,12 +183,12 @@ SEXP mlc_deserialize(ordered_json data, ordered_json schema){
             Rcpp::StringVector rs = Rcpp::StringVector::import(xs.begin(), xs.end());
             result = Rcpp::as<SEXP>(rs);
         } else {
-            Rcpp::List L = Rcpp::List::create();
+            Rcpp::List rs = Rcpp::List::create();
             for (ordered_json::iterator it = data.begin(); it != data.end(); ++it) {
-                SEXP val = mlc_deserialize(*it, list_type);
-                L.push_back(val);
+                SEXP val = mlc_deserialize_(*it, list_type);
+                rs.push_back(val);
             }
-            result = Rcpp::as<SEXP>(L);
+            result = Rcpp::as<SEXP>(rs);
         }
     } else if (schema.size() == 1 && schema.contains("tuple")){
         Rcpp::List L = Rcpp::List::create();
@@ -202,20 +202,35 @@ SEXP mlc_deserialize(ordered_json data, ordered_json schema){
             );
         }
         for (size_t i = 0; i < tuple_types.size(); i++){
-            SEXP val = mlc_deserialize(data.at(i), tuple_types.at(i));
+            SEXP val = mlc_deserialize_(data.at(i), tuple_types.at(i));
             L.push_back(val);
         }
         result = Rcpp::as<SEXP>(L);
     } else if (schema.size() == 1 && schema.contains("record")){
-        result = mlc_deserialize(data, schema["record"]); 
-    } else if (schema.size() == 1 && schema.contains("dataframe")){
-        Rcpp::stop("R dataframe deserialization is not yet supported");
+        result = mlc_deserialize_(data, schema["record"]); 
+    } else if (schema.size() == 1 && schema.contains("table")){
+        // FIXME: there must be an easier solution ...
+        Rcpp::List L = Rcpp::as<Rcpp::List>(mlc_deserialize_(data, schema["table"])); 
+        // Solution adapted from https://gallery.rcpp.org/articles/faster-data-frame-creation/
+        Rcpp::GenericVector sample_row = L(0);
+        Rcpp::StringVector row_names(sample_row.length());
+        for (int i = 0; i < sample_row.length(); ++i) {
+            char name[15]; // replace with `(floor(log10(N))+1)`
+            sprintf(&(name[0]), "%d", i);
+            row_names(i) = name;
+        }
+        // If row.names is not set here, an empty data frame is returned. This
+        // seems weird, since row names are generally disfavored in the R
+        // community. I will set them to NULL on the R side, I guess.
+        L.attr("row.names") = row_names;
+        L.attr("class") = "data.frame";
+        result = Rcpp::as<SEXP>(L);
     } else if (schema.size() == 1 && schema.contains("matrix")){
         Rcpp::stop("R matrix deserialization is not yet supported");
     } else if (schema.is_object()) {
         Rcpp::List L = Rcpp::List::create();
         for (ordered_json::iterator it = schema.begin(); it != schema.end(); ++it) {
-            SEXP el = mlc_deserialize(data[it.key()], it.value());
+            SEXP el = mlc_deserialize_(data[it.key()], it.value());
             L.push_back(el, it.key());
         }
         result = Rcpp::as<SEXP>(L);

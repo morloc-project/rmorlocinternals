@@ -19,8 +19,7 @@ Rcpp::String mlc_serialize(SEXP x, std::string schema);
 //'
 //' @param data JSON data
 //' @param schema JSON type string
-//' @export
 // [[Rcpp::export]]
-SEXP mlc_deserialize(std::string data, std::string schema);
+SEXP mlc_deserialize_(std::string data, std::string schema);
 
 #endif

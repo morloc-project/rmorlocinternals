@@ -44,6 +44,17 @@
   paste0('{"record":', .mlc_object(...), '}')
 }
 
+#' Helper function for building table types
+#'
+#' @param ... key-value pairs with JSON strings for column types
+.mlc_table <- function(...){
+  entries <- list(...)
+  for(name in names(entries)){
+    entries[[name]] = .mlc_list(entries[[name]])
+  }
+  paste0('{"table":', do.call(.mlc_object,entries), '}')
+}
+
 #' An R scalar integer type
 .mlc_integer <- '"integer"'
 

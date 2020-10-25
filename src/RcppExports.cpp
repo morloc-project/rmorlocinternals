@@ -17,22 +17,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// mlc_deserialize
-SEXP mlc_deserialize(std::string data, std::string schema);
-RcppExport SEXP _rmorlocinternals_mlc_deserialize(SEXP dataSEXP, SEXP schemaSEXP) {
+// mlc_deserialize_
+SEXP mlc_deserialize_(std::string data, std::string schema);
+RcppExport SEXP _rmorlocinternals_mlc_deserialize_(SEXP dataSEXP, SEXP schemaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type data(dataSEXP);
     Rcpp::traits::input_parameter< std::string >::type schema(schemaSEXP);
-    rcpp_result_gen = Rcpp::wrap(mlc_deserialize(data, schema));
+    rcpp_result_gen = Rcpp::wrap(mlc_deserialize_(data, schema));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rmorlocinternals_mlc_serialize", (DL_FUNC) &_rmorlocinternals_mlc_serialize, 2},
-    {"_rmorlocinternals_mlc_deserialize", (DL_FUNC) &_rmorlocinternals_mlc_deserialize, 2},
+    {"_rmorlocinternals_mlc_deserialize_", (DL_FUNC) &_rmorlocinternals_mlc_deserialize_, 2},
     {NULL, NULL, 0}
 };
 

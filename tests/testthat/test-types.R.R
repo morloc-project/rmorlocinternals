@@ -17,5 +17,12 @@ test_that(
                  '{"record":{"a":"integer"}}')
     expect_equal(.mlc_record(a='"yolo"',b=.mlc_array("1", "34")),
                  '{"record":{"a":"yolo","b":[1,34]}}')
+    expect_equal(.mlc_table(a=.mlc_integer),
+                 '{"table":{"a":{"list":["integer"]}}}')
+    expect_equal(.mlc_table(a='"yolo"',b=.mlc_array("1", "34")),
+                 '{"table":{"a":{"list":["yolo"]},"b":{"list":[[1,34]]}}}')
+    # table type is the same as a record of lists
+    expect_equal(.mlc_table(a='"yolo"'),
+                 sub("record", "table", .mlc_record(a=.mlc_list('"yolo"'))))
   }
 )

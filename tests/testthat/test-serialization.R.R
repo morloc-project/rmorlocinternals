@@ -133,3 +133,14 @@ test_that(
     )
   }
 )
+
+test_that(
+  "Can (de)serialize tables",
+  {
+    df_json <- '{"x":[1,2,3],"y":[2,3,4]}'
+    df <- data.frame(x=c(1,2,3), y=c(2,3,4))
+    schema <- .mlc_table(x=.mlc_integer, y=.mlc_integer)
+    expect_equal(mlc_serialize(df, schema), df_json)
+    expect_equal(mlc_deserialize(df_json, schema), df)
+  }
+)
