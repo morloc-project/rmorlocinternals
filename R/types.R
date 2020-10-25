@@ -52,7 +52,7 @@
   for(name in names(entries)){
     entries[[name]] = .mlc_list(entries[[name]])
   }
-  paste0('{"table":', do.call(.mlc_object,entries), '}')
+  paste0('{"data.frame":', do.call(.mlc_object,entries), '}')
 }
 
 #' An R scalar integer type

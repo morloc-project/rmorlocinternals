@@ -128,8 +128,8 @@ ordered_json mlc_serialize_list(Rcpp::List x, ordered_json schema){
         }
     } else if (schema.size() == 1 && schema.contains("record")) {
         output = mlc_serialize_list(x, schema["record"]);
-    } else if (schema.size() == 1 && schema.contains("table")) {
-        output = mlc_serialize_list(x, schema["table"]);
+    } else if (schema.size() == 1 && schema.contains("data.frame")) {
+        output = mlc_serialize_list(x, schema["data.frame"]);
     } else if (schema.size() == 1 && schema.contains("matrix")){
         Rcpp::stop("R matrix serialization is not yet supported");
     } else {
@@ -208,9 +208,9 @@ SEXP mlc_deserialize_(ordered_json data, ordered_json schema){
         result = Rcpp::as<SEXP>(L);
     } else if (schema.size() == 1 && schema.contains("record")){
         result = mlc_deserialize_(data, schema["record"]); 
-    } else if (schema.size() == 1 && schema.contains("table")){
+    } else if (schema.size() == 1 && schema.contains("data.frame")){
         // FIXME: there must be an easier solution ...
-        Rcpp::List L = Rcpp::as<Rcpp::List>(mlc_deserialize_(data, schema["table"])); 
+        Rcpp::List L = Rcpp::as<Rcpp::List>(mlc_deserialize_(data, schema["data.frame"])); 
         // Solution adapted from https://gallery.rcpp.org/articles/faster-data-frame-creation/
         Rcpp::GenericVector sample_row = L(0);
         Rcpp::StringVector row_names(sample_row.length());
