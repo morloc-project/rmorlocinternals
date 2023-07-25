@@ -88,8 +88,23 @@ ordered_json mlc_serialize(SEXP x, ordered_json schema){
             }
             break;
         case LGLSXP:
+            // How should a logical vector be represented in JSON?
+            //   [true, true, true] or [1,1,1]
+            // I actually like the later more
+            // To make it so, replace the below code with:
+            // ```
+            // if (schema.size() == 1 && schema.contains("list") && schema["list"].at(0).dump() == LOGICAL){
+            //     output = Rcpp::as<Rcpp::LogicalVector>(x);
+            // ```
+            // The LogicalVector serializes to 1's and 0's.
+            // However, C++ and R currently serialize to "true/false", so for
+            // consistency I do the same here.
             if (schema.size() == 1 && schema.contains("list") && schema["list"].at(0).dump() == LOGICAL){
-                output = Rcpp::as<Rcpp::LogicalVector>(x);
+                if (Rcpp::as<Rcpp::List>(x).size() == 0) {
+                    output = Rcpp::as<Rcpp::LogicalVector>(x);
+                } else {
+                    output = mlc_serialize_list(Rcpp::as<Rcpp::List>(x), schema);
+                }
             } else if (schema.dump() == LOGICAL) {
                 output = Rcpp::as<bool>(x);
             } else {

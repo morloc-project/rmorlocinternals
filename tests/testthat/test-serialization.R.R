@@ -63,6 +63,10 @@ test_that(
       mlc_deserialize("[[1,2],[3,4]]", .mlc_list(.mlc_list(.mlc_integer))),
       list(as.integer(c(1,2)), as.integer(c(3,4)))
     )
+    expect_equal(
+      mlc_deserialize("[[true,false],[false,true]]", .mlc_list(.mlc_list(.mlc_logical))),
+      list(c(TRUE,FALSE), c(FALSE,TRUE))
+    )
   }
 )
 
@@ -84,6 +88,10 @@ test_that(
     expect_identical(
       mlc_serialize(list(list(1,2), list(3,4)), .mlc_list(.mlc_tuple(.mlc_integer, .mlc_integer))),
       "[[1,2],[3,4]]"
+    )
+    expect_equal(
+      mlc_serialize(list(c(TRUE,FALSE), c(FALSE,TRUE)), .mlc_list(.mlc_list(.mlc_logical))),
+      "[[true,false],[false,true]]"
     )
   }
 )
