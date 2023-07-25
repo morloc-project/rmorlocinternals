@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // mlc_serialize
 Rcpp::String mlc_serialize(SEXP x, std::string schema);
 RcppExport SEXP _rmorlocinternals_mlc_serialize(SEXP xSEXP, SEXP schemaSEXP) {
